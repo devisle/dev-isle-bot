@@ -1,30 +1,67 @@
-import { Client, Message, PartialMessage, TextChannel, Channel }  from "discord.js";
+import { Client, Message, PartialMessage, TextChannel, Channel, DMChannel }  from "discord.js";
 import dotenv from "dotenv";
 
 class Main {
+    /**
+     * The base Discord.js client
+     */
     private readonly _client = new Client();
+    /**
+     * A tracker of the currently active question user's ID allowed
+     * to be answered in #code-help
+     */
+    private _currentActiveQuestionUserID: string;
 
     constructor() {
         dotenv.config();
         this._client.on("ready", () => {
             console.log(`Logged in as: ${this._client.user?.tag}`);
-
             /**
              * Message timers
              */
             // code-help
-            this.createHourlyTextChannelMessageLoop(this._client.channels.cache.get("624309965934428180"),
+            this.createHourlyTextChannelMessageLoop(this._client.channels.cache.get("581854334401118292"),
             "Remember to *ask* questions, there's no need to ask to ask! :smile:");
-
-
         });
 
-        this._client.on("message", (msg => {
+        this._client.on("message", ((msg: Message | PartialMessage) => {
+            /**
+             * Command register
+             */
+            // check for traditional "!" command
+            if (this.checkMessageIsACommand(msg)) {
+
+            }
+
+            this.assignQuestionUserID(msg);
+
         }));
 
         this._client.login(process.env.BOT_TOKEN);
     }
 
+    /**
+     *
+     * @param msg
+     */
+    private assignQuestionUserID(msg: Message | PartialMessage): void {
+        if (this.checkMessageIsACodeHelpQuestion(msg)) {
+            this._currentActiveQuestionUserID = msg.member.id;
+            console.log(this._client.users.cache.get(this._currentActiveQuestionUserID));
+        }
+    }
+
+    /**
+     * Check if the message is prefixed with [QUESTION] and it is in "code-help"
+     * @param msg a message sent by a user
+     */
+    private checkMessageIsACodeHelpQuestion(msg: Message | PartialMessage): boolean {
+        const prefix = msg.content.substring(0, 11);
+
+        if (prefix === "[QUESTION] " && this.getChannelName(msg) === "vip-chat") {
+            return true;
+        }
+    }
     /**
      * Checks if the msg begins with "!"
      * @param msg Any message typed by a user in any channel
@@ -53,8 +90,8 @@ class Main {
     }
 
     /**
-     * Creates a message loop to be run every hour at XX:00:00 but watched for repeats,
-     * if a repeat is found. No message is sent until the next hour.
+     * Creates a message loop to be run every hour at XX:00:00 but watched for repeats in the sense that,
+     * if the previous message author was a bot(any bot at all). Then we don't need to send another message.
      * @param channel the channel to send the message in - please only pass TextChannels
      * @param msg the message text to send
      */
@@ -65,12 +102,13 @@ class Main {
         setInterval(() => {
             d = new Date();
             this.getPreviousMessageForChannel(tChannel.id).then((prevMsg: Message | void) => {
-                if ((prevMsg as Message).content !== msg && d.getMinutes() === 0o4) {
+                if (!(prevMsg as Message).author.bot && d.getMinutes() === 17) {
                     tChannel.send(msg);
                 }
             });
         }, 60000);
     }
+
 }
 
 new Main();
