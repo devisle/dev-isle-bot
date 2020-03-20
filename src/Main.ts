@@ -13,8 +13,9 @@ class Main {
              * Message timers
              */
             // code-help
-            this.createHourlyMessageLoop(this._client.channels.cache.get("624309965934428180"),
+            this.createHourlyTextChannelMessageLoop(this._client.channels.cache.get("624309965934428180"),
             "Remember to *ask* questions, there's no need to ask to ask! :smile:");
+
 
         });
 
@@ -43,17 +44,31 @@ class Main {
     }
 
     /**
-     * Creates a message loop to be run every hour at XX:00:00
+     * Returns a promise for the last sent message within a given channel
+     * @param channelID a string representing a channel's ID
+     */
+    private getPreviousMessageForChannel(channelID: string): Promise<Message | void> {
+        const x = this._client.channels.cache.get(channelID) as TextChannel;
+        return x.messages.fetch(x.lastMessageID);
+    }
+
+    /**
+     * Creates a message loop to be run every hour at XX:00:00 but watched for repeats,
+     * if a repeat is found. No message is sent until the next hour.
      * @param channel the channel to send the message in - please only pass TextChannels
      * @param msg the message text to send
      */
-    private createHourlyMessageLoop(channel: Channel, msg: String): void {
-        let d;
+    private createHourlyTextChannelMessageLoop(channel: Channel, msg: String): void {
+        let d: Date;
+        const tChannel: TextChannel = channel as TextChannel;
+
         setInterval(() => {
             d = new Date();
-            if ((channel as TextChannel).lastMessage?.content !== msg && d.getMinutes() === 0o0 && d.getSeconds() === 0o0) {
-                (channel as TextChannel).send(msg);
-            }
+            this.getPreviousMessageForChannel(tChannel.id).then((prevMsg: Message | void) => {
+                if ((prevMsg as Message).content !== msg && d.getMinutes() === 0o4) {
+                    tChannel.send(msg);
+                }
+            });
         }, 60000);
     }
 }
