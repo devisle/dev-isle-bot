@@ -48,8 +48,9 @@ class Main {
      * @param msg the message text to send
      */
     private createHourlyMessageLoop(channel: Channel, msg: String): void {
-        const d = new Date();
+        let d;
         setInterval(() => {
+            d = new Date();
             if ((channel as TextChannel).lastMessage?.content !== msg && d.getMinutes() === 0o0 && d.getSeconds() === 0o0) {
                 (channel as TextChannel).send(msg);
             }
