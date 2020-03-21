@@ -2,12 +2,12 @@
   "name": "backend",
   "version": "1.0.0",
   "description": "",
-  "main": "dist/Main.js",
+  "main": "dist/Bot.js",
   "scripts": {
     "build": "tsc",
     "dev": "nodemon",
-    "start:dev": "ts-node src/Main.ts",
-    "start": "node dist/Main.js",
+    "start:dev": "ts-node src/Bot.ts",
+    "start": "node dist/Bot.js",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "author": "Alexander Kilroy",

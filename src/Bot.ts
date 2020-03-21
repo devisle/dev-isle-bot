@@ -1,11 +1,12 @@
-import { Client, Message, PartialMessage, TextChannel, Channel, DMChannel }  from "discord.js";
+import { Client, Message, PartialMessage, TextChannel, Channel, DMChannel, User, MessageReaction } from "discord.js";
 import dotenv from "dotenv";
 
-class Main {
+class Bot {
     /**
      * The base Discord.js client
      */
     private readonly _client = new Client();
+
     /**
      * A tracker of the currently active question user's ID allowed
      * to be answered in #code-help
@@ -14,41 +15,81 @@ class Main {
 
     constructor() {
         dotenv.config();
-        this._client.on("ready", () => {
-            console.log(`Logged in as: ${this._client.user?.tag}`);
-            /**
-             * Message timers
-             */
-            // code-help
-            this.createHourlyTextChannelMessageLoop(this._client.channels.cache.get("581854334401118292"),
-            "Remember to *ask* questions, there's no need to ask to ask! :smile:");
-        });
-
-        this._client.on("message", ((msg: Message | PartialMessage) => {
-            /**
-             * Command register
-             */
-            // check for traditional "!" command
-            if (this.checkMessageIsACommand(msg)) {
-
-            }
-
-            this.assignQuestionUserID(msg);
-
-        }));
-
+        this.setupReadyEvents();
+        this.setupMessageEvents();
+        this.setupMessageReactionAddEvents();
         this._client.login(process.env.BOT_TOKEN);
     }
 
     /**
-     *
-     * @param msg
+     * Sets up the ready events
      */
-    private assignQuestionUserID(msg: Message | PartialMessage): void {
-        if (this.checkMessageIsACodeHelpQuestion(msg)) {
-            this._currentActiveQuestionUserID = msg.member.id;
-            console.log(this._client.users.cache.get(this._currentActiveQuestionUserID));
+    private setupReadyEvents(): void {
+        this._client.on("ready", () => {
+            console.log(`Logged in as: ${this._client.user?.tag}`);
+            // code-help
+            this.createHourlyTextChannelMessageLoop(this._client.channels.cache.get("581854334401118292"),
+                "Remember to *ask* questions, there's no need to ask to ask! :smile:");
+        });
+    }
+
+    /**
+     * Sets up the message events
+     */
+    private setupMessageEvents(): void {
+        this._client.on("message", ((msg: Message | PartialMessage) => {
+            this.performCommand(msg);
+
+            this.setActiveCodeHelpQuestion(msg);
+        }));
+    }
+
+    /**
+     * Sets up the messageReactionAddEvents
+     */
+    private setupMessageReactionAddEvents(): void {
+        this._client.on("messageReactionAdd", (messageReaction: MessageReaction) => {
+            this.watchForCodeHelpAnswerReaction(messageReaction);
+        });
+    }
+
+    private watchForCodeHelpAnswerReaction(msgReaction: MessageReaction): void {
+        const currentQuestionAsker: User = this._client.users.cache.get(this._currentActiveQuestionUserID);
+        console.log("reaction happened");
+        if ((msgReaction.message.channel as TextChannel).name === "vip-chat") {
+            console.log("reaction in vip chat");
         }
+    }
+
+    /**
+     * Sets the currently active question within #code-help
+     * --- this is just a POC, will adjust to apply to ALL channels if works out ---
+     * @param msg a message sent by a user
+     */
+    private setActiveCodeHelpQuestion(msg: Message | PartialMessage): void {
+        if (this.checkMessageIsACodeHelpQuestion(msg)) {
+            this.assignActiveQuestionUserID(msg);
+        }
+    }
+
+    /**
+     * Checks if the message is a command, if it is, performs given command
+     * @param msg a message sent by a user
+     */
+    private performCommand(msg: Message | PartialMessage): void {
+        if (this.checkMessageIsACommand(msg)) {
+            console.log("command written");
+        }
+    }
+
+    /**
+     * Assigns the ID of a user to this._currentActiveQuestionUserID
+     * @param msg a message sent by a user
+     */
+    private assignActiveQuestionUserID(msg: Message | PartialMessage): void {
+        this._currentActiveQuestionUserID = msg.member.id;
+        console.log("New active question asker user:");
+        console.log(this._client.users.cache.get(this._currentActiveQuestionUserID));
     }
 
     /**
@@ -62,6 +103,7 @@ class Main {
             return true;
         }
     }
+
     /**
      * Checks if the msg begins with "!"
      * @param msg Any message typed by a user in any channel
@@ -72,6 +114,7 @@ class Main {
         }
         return false;
     }
+
     /**
      * Gets the channel name of a users typed message
      * @param msg Any message typed by a user in any channel
@@ -111,6 +154,6 @@ class Main {
 
 }
 
-new Main();
+new Bot();
 
 
