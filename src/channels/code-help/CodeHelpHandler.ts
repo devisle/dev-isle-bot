@@ -15,11 +15,10 @@ export default class CodeHelpHandler {
      * A tracker of the current active question message ID
      */
     private _currentActiveQuestionMsgID: string;
-
     /**
      * The selected correct answer user's ID -- this is reset upon storing points in DB
      */
-    private _activeQuestionAnswerUserID: string;
+    private _activeQuestionAnswerUser: User;
 
     constructor(client: Client) {
         this._client = client;
@@ -112,6 +111,7 @@ export default class CodeHelpHandler {
                 msgReaction.message.react("☑️");
                 console.log("Question answered");
                 this._currentActiveQuestionUserID = "";
+                this._activeQuestionAnswerUser = msgReaction.message.author;
                 msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: " + msgReaction.message.author.toString());
 
             } else if(msgReaction.emoji.name === "✅"
