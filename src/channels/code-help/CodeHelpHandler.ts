@@ -1,40 +1,41 @@
-import { Client, Message, PartialMessage,
-         TextChannel,
-         User, MessageReaction, GuildMember,
-         PartialGuildMember } from "discord.js";
-import dotenv from "dotenv";
-import CodeHelpHandler from "./channels/code-help/CodeHelpHandler";
+import { Client, Message, PartialMessage, TextChannel, Channel, DMChannel, User, MessageReaction } from "discord.js";
+import createHourlyTextChannelMessageLoop from "../../utils/createHourlyTextChannelMessageLoop";
+import checkMessageIsACommand from "../../utils/checkMessageIsACommand";
+import getChannelName from "../../utils/getChannelName";
 
-class Bot {
+
+export default class CodeHelpHandler {
     /**
-     * The base Discord.js client
+     * The original client obj
      */
-    private readonly _client = new Client();
+    private _client: Client;
 
     /**
-     * A tracker of the currently active question user's ID allowed
-     * to be answered in #code-help
+     * A tracker of the currently active question user's ID
      */
     private _currentActiveQuestionUserID: string;
 
-    constructor() {
-        dotenv.config();
-        /**
-         * Welcome message
-         */
-        this._client.on("guildMemberAdd", (member: GuildMember | PartialGuildMember) => {
-            console.log(`Welcome to Dev Isle ${member.displayName}!`);
-        });
-        /**
-         * Setup channel handlers
-         */
-        new CodeHelpHandler(this._client);
-        this.setupMessageEvents();
-        this.setupMessageReactionAddEvents();
-        this._client.login(process.env.BOT_TOKEN);
+    constructor(client: Client) {
+        this._client = client;
+        this.setupEvents();
     }
 
+    private setupEvents(): void {
+        this.setupReadyEvents();
+        this.setupMessageEvents();
+        this.setupMessageReactionAddEvents();
+    }
 
+    /**
+     * Sets up the ready events
+     */
+    private setupReadyEvents(): void {
+        this._client.on("ready", () => {
+            console.log(`Logged in as: ${this._client.user?.tag}`);
+            createHourlyTextChannelMessageLoop(this._client, this._client.channels.cache.get("581854334401118292"),
+                "Remember to *ask* questions, there's no need to ask to ask! :smile:");
+        });
+    }
 
     /**
      * Sets up the message events
@@ -42,7 +43,6 @@ class Bot {
     private setupMessageEvents(): void {
         this._client.on("message", ((msg: Message | PartialMessage) => {
             this.performCommand(msg);
-
             this.setActiveCodeHelpQuestion(msg);
         }));
     }
@@ -67,7 +67,6 @@ class Bot {
 
     /**
      * Sets the currently active question within #code-help
-     * --- this is just a POC, will adjust to apply to ALL channels if works out ---
      * @param msg a message sent by a user
      */
     private setActiveCodeHelpQuestion(msg: Message | PartialMessage): void {
@@ -81,8 +80,20 @@ class Bot {
      * @param msg a message sent by a user
      */
     private performCommand(msg: Message | PartialMessage): void {
-        if (this.checkMessageIsACommand(msg)) {
+        if (checkMessageIsACommand(msg)) {
             console.log("command written");
+        }
+    }
+
+    /**
+     * Check if the message is prefixed with [QUESTION] and it is in "code-help"
+     * @param msg a message sent by a user
+     */
+    private checkMessageIsACodeHelpQuestion(msg: Message | PartialMessage): boolean {
+        const prefix = msg.content.substring(0, 11);
+
+        if (prefix === "[QUESTION] " && getChannelName(msg) === "vip-chat") {
+            return true;
         }
     }
 
@@ -96,43 +107,4 @@ class Bot {
         console.log(this._client.users.cache.get(this._currentActiveQuestionUserID));
     }
 
-    /**
-     * Check if the message is prefixed with [QUESTION] and it is in "code-help"
-     * @param msg a message sent by a user
-     */
-    private checkMessageIsACodeHelpQuestion(msg: Message | PartialMessage): boolean {
-        const prefix = msg.content.substring(0, 11);
-
-        if (prefix === "[QUESTION] " && this.getChannelName(msg) === "vip-chat") {
-            return true;
-        }
-    }
-
-    /**
-     * Checks if the msg begins with "!"
-     * @param msg Any message typed by a user in any channel
-     */
-    private checkMessageIsACommand(msg: Message | PartialMessage): Boolean {
-        if (msg.content[0] === "!") {
-            return true;
-        }
-        return false;
-    }
-
-    /**
-     * Gets the channel name of a users typed message
-     * @param msg Any message typed by a user in any channel
-     */
-    private getChannelName(msg: Message | PartialMessage): String {
-        return (msg.channel as TextChannel).name;
-    }
-
-
-
-
-
 }
-
-new Bot();
-
-
