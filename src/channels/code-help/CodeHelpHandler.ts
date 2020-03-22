@@ -1,6 +1,5 @@
-import { Client, Message, PartialMessage, TextChannel, User, MessageReaction } from "discord.js";
+import { Client, Message, PartialMessage, TextChannel, User, MessageReaction, ReactionEmoji, Emoji } from "discord.js";
 import { createHourlyTextChannelMessageLoop, getChannelName } from "../../utils";
-
 
 export default class CodeHelpHandler {
     /**
@@ -12,6 +11,15 @@ export default class CodeHelpHandler {
      * A tracker of the currently active question user's ID
      */
     private _currentActiveQuestionUserID: string;
+    /**
+     * A tracker of the current active question message ID
+     */
+    private _currentActiveQuestionMsgID: string;
+
+    /**
+     * The selected correct answer user's ID -- this is reset upon storing points in DB
+     */
+    private _activeQuestionAnswerUserID: string;
 
     constructor(client: Client) {
         this._client = client;
@@ -48,27 +56,21 @@ export default class CodeHelpHandler {
     }
 
 
-    // sets the currently active question within #code-help
+    // sets the currently active question within asker id and msg id
     private setActiveCodeHelpQuestion(msg: Message | PartialMessage): void {
         if (this.checkMessageIsACodeHelpQuestion(msg)) {
-            this.assignActiveQuestionUserID(msg);
+            console.log(msg.author.username + " asked question:", "\n", msg.content);
+            this._currentActiveQuestionUserID = msg.member.id;
+            this._currentActiveQuestionMsgID = msg.id;
         }
     }
 
     // check if the message is prefixed with [QUESTION] and it is in "code-help"
     private checkMessageIsACodeHelpQuestion(msg: Message | PartialMessage): boolean {
         const prefix = msg.content.substring(0, 11);
-
-        if (prefix === "[QUESTION] " && getChannelName(msg) === "vip-chat") {
+        if (prefix === "[QUESTION] " && getChannelName(msg) === "test") {
             return true;
         }
-    }
-
-    // assigns the ID of a user to this._currentActiveQuestionUserID
-    private assignActiveQuestionUserID(msg: Message | PartialMessage): void {
-        this._currentActiveQuestionUserID = msg.member.id;
-        console.log("New active question asker user:");
-        console.log(this._client.users.cache.get(this._currentActiveQuestionUserID));
     }
 
     /**
@@ -76,18 +78,46 @@ export default class CodeHelpHandler {
      */
     private setupMessageReactionAddEvents(): void {
         this._client.on("messageReactionAdd", (messageReaction: MessageReaction) => {
-            console.log("reacted");
             this.watchForCodeHelpAnswerReaction(messageReaction);
         });
     }
 
-    //
+    // watches for a reaction of '✅' by the owner of the question,
+    // disallows any none question askers to use '✅' whilst a question
+    // is active
+    // eEDIT: convert the reactions to look for ID's instead of icons, just to future proof this
     private watchForCodeHelpAnswerReaction(msgReaction: MessageReaction): void {
-        const currentQuestionAsker: User = this._client.users.cache.get(this._currentActiveQuestionUserID);
-        console.log("reaction happened");
-        if ((msgReaction.message.channel as TextChannel).name === "vip-chat") {
-            console.log("reaction in vip chat");
+        // completely prevent the use of ☑️, it will be a bot only reaction
+        if (msgReaction.emoji.name === "☑️" && !msgReaction.me) {
+            msgReaction.remove();
         }
+
+        if ((msgReaction.message.channel as TextChannel).name === "test") {
+            // prevent calling an answer on the question itself by anyone
+            if (msgReaction.message.id === this._currentActiveQuestionMsgID &&
+                msgReaction.emoji.name === "✅") {
+                msgReaction.remove();
+            }
+            // prevent anyone but the active question user using the greentick
+            if (msgReaction.emoji.name === "✅" && !msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
+                msgReaction.remove();
+            }
+            // accept clause
+            if (msgReaction.emoji.name === "✅"
+                && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
+                && msgReaction.message.id !== this._currentActiveQuestionMsgID) {
+                msgReaction.remove();
+                msgReaction.message.react("☑️");
+                console.log("Question answered");
+                this._currentActiveQuestionUserID = "";
+                msgReaction.message.channel.send(
+                    "Answered accepted ☑️, 5 points given to: " +
+                    msgReaction.message.author.toString());
+
+            }
+
+        }
+
     }
 
 
