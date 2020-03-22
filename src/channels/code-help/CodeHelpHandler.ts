@@ -1,5 +1,6 @@
 import { Client, Message, PartialMessage, TextChannel, User, MessageReaction, ReactionEmoji, Emoji } from "discord.js";
 import { createHourlyTextChannelMessageLoop, getChannelName } from "../../utils";
+import DBService from "../../services/DBService";
 
 export default class CodeHelpHandler {
     /**
@@ -93,6 +94,12 @@ export default class CodeHelpHandler {
         }
 
         if ((msgReaction.message.channel as TextChannel).name === "test") {
+
+            // mongo test
+            new DBService();
+            console.log("boop");
+
+
             // prevent calling an answer on the question itself by anyone
             if (msgReaction.message.id === this._currentActiveQuestionMsgID &&
                 msgReaction.emoji.name === "✅") {
@@ -104,9 +111,9 @@ export default class CodeHelpHandler {
             }
             // accept clause
             if (msgReaction.emoji.name === "✅"
-                && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
-                && msgReaction.message.id !== this._currentActiveQuestionMsgID
-                && msgReaction.message.author !== msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
+            && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
+            && msgReaction.message.id !== this._currentActiveQuestionMsgID
+            && msgReaction.message.author !== msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
                 msgReaction.remove();
                 msgReaction.message.react("☑️");
                 console.log("Question answered");
