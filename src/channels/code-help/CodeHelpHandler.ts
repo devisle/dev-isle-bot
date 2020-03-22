@@ -1,5 +1,5 @@
 import { Client, Message, PartialMessage, TextChannel, User, MessageReaction } from "discord.js";
-import { createHourlyTextChannelMessageLoop, getChannelName } from "../../utils";
+import { createHourlyTextChannelMessageLoop, getChannelName, checkMessageIsACommand } from "../../utils";
 import DBService from "../../services/DBService";
 import { Collection } from "mongodb";
 
@@ -12,15 +12,13 @@ export default class CodeHelpHandler {
     /**
      * A tracker of the currently active question user's ID
      */
+
     private _currentActiveQuestionUserID: string;
     /**
      * A tracker of the current active question message ID
      */
     private _currentActiveQuestionMsgID: string;
-    /**
-     * The selected correct answer user's ID -- this is reset upon storing points in DB
-     */
-    private _activeQuestionAnswerUser: User;
+
 
     constructor(client: Client) {
         this._client = client;
@@ -43,7 +41,7 @@ export default class CodeHelpHandler {
         this._client.on("ready", () => {
             console.log(`Logged in as: ${this._client.user?.tag}`);
             createHourlyTextChannelMessageLoop(this._client, this._client.channels.cache.get("581854334401118292"),
-                "Remember to *ask* questions, there's no need to ask to ask! :smile:");
+                "Please follow our system when asking questions, use command '!question-help' for more info! (currently not online)");
         });
     }
 
@@ -53,6 +51,7 @@ export default class CodeHelpHandler {
     private setupMessageEvents(): void {
         this._client.on("message", ((msg: Message | PartialMessage) => {
             this.setActiveCodeHelpQuestion(msg);
+            this.questionHelpCommand(msg);
         }));
     }
 
@@ -68,9 +67,24 @@ export default class CodeHelpHandler {
 
     // check if the message is prefixed with [QUESTION] and it is in "code-help"
     private checkMessageIsACodeHelpQuestion(msg: Message | PartialMessage): boolean {
-        const prefix = msg.content.substring(0, 11);
-        if (prefix === "[QUESTION] " && getChannelName(msg) === "test") {
+        const prefix = msg.content.substring(0, 4);
+        if (prefix === "[Q] " && getChannelName(msg) === "test") {
             return true;
+        }
+    }
+
+    private questionHelpCommand(message: Message | PartialMessage): void {
+        if (checkMessageIsACommand(message)) {
+            if (message.content.substring(1, 14) === "question-help") {
+                message.author.send(
+                    "In order to ask questions in **#code-help**, you must begin your message with **[Q]**."
+                    + "\n" +
+                    "React with a ✅ checkmark to select an answer."
+                    + "\r" +
+                    "When the checkmark turns into ☑️, the points for that users role have been updated"
+                    + "\r" +
+                    "Happy coding! Love, *Dev Isle team*.");
+            }
         }
     }
 
@@ -83,76 +97,76 @@ export default class CodeHelpHandler {
         });
     }
 
-    // watches for a reaction of '✅' by the owner of the question,
-    // disallows any none question askers to use '✅' whilst a question
-    // is active
-    // eEDIT: convert the reactions to look for ID's instead of icons, just to future proof this
-    // and refactor it, pretty ugly honestly
+    // watches for a reaction of '✅' by the owner of a question
     private async watchForCodeHelpAnswerReaction(msgReaction: MessageReaction): Promise<void> {
-        // completely prevent the use of ☑️, it will be a bot only reaction
-        if (msgReaction.emoji.name === "☑️" && !msgReaction.me) {
-            msgReaction.remove();
-        }
+        const emojiName = msgReaction.emoji.name;
+        const emojiMsgId = msgReaction.message.id;
+        const emojiMsgAuthor = msgReaction.message.author;
 
+        // disallow blue tick if user isn't a bot
+        // disallow green tick being used on active question
+        // disallow use of green tick on answers unless you're active question user
+        const tickUsageIsIllegal = (emojiName === "☑️" && !msgReaction.me
+        || emojiMsgId === this._currentActiveQuestionMsgID && emojiName === "✅"
+        || emojiName === "✅" && !msgReaction.users.cache.get(this._currentActiveQuestionUserID));
+
+        // if the tick is green, the active question user has reacted, the message is not the question id
+        // and the author of the msg reacted to is not the active question user, accept the answer
+        const tickUsageIsLegal = (emojiName === "✅" && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
+        && emojiMsgId !== this._currentActiveQuestionMsgID
+        && emojiMsgAuthor !== msgReaction.users.cache.get(this._currentActiveQuestionUserID));
+
+        const userIsAttemptingToAnswerOwnQuestion = (msgReaction.emoji.name === "✅"
+        && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
+        && msgReaction.message.id !== this._currentActiveQuestionMsgID
+        && msgReaction.message.author === msgReaction.users.cache.get(this._currentActiveQuestionUserID));
+
+        // ensure it is the correct channel
         if ((msgReaction.message.channel as TextChannel).name === "test") {
-            // prevent calling an answer on the question itself by anyone
-            if (msgReaction.message.id === this._currentActiveQuestionMsgID &&
-                msgReaction.emoji.name === "✅") {
+
+            if (tickUsageIsIllegal) {
                 msgReaction.remove();
             }
-            // prevent anyone but the active question user using the greentick
-            if (msgReaction.emoji.name === "✅" && !msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
-                msgReaction.remove();
-            }
-            // accept clause
-            if (msgReaction.emoji.name === "✅"
-            && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
-            && msgReaction.message.id !== this._currentActiveQuestionMsgID
-            && msgReaction.message.author !== msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
+
+            if (tickUsageIsLegal) {
                 msgReaction.remove();
                 msgReaction.message.react("☑️");
-                console.log("Question answered");
+                // reset the active question user for next question
                 this._currentActiveQuestionUserID = "";
-                this._activeQuestionAnswerUser = msgReaction.message.author;
-                let correctUsersTotalPoints;
-                // create role document for new contributor
-                await DBService.connect(process.env.MONGO_DB_NAME, "roles").then((collection: Collection) => {
-                    // check if answerer has answered a question before
-                    collection.find({ userID: this._activeQuestionAnswerUser.id }).toArray((err, docs) => {
-                        const user: { _id: string, userID: string, rolePoints: number } = docs[0];
-                        // if they have, give them 5 points
-                        if (docs.length > 0) {
-                            collection.updateOne({ userID: this._activeQuestionAnswerUser.id },
-                                {
-                                    $set: { rolePoints: user.rolePoints + 5}
-                                }
-                            );
-                        correctUsersTotalPoints = user.rolePoints + 5;
-                        msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: "
-                        + msgReaction.message.author.toString() + " now has " + correctUsersTotalPoints + " points");
-                        } else {
-                        // else just create a new entry
-                            collection.insertMany([
-                                {
-                                    userID: this._activeQuestionAnswerUser.id,
-                                    rolePoints: 5
-                                }
-                            ]);
-                        }
-                    });
-                });
-            // deny own answer clause
-            } else if(msgReaction.emoji.name === "✅"
-            && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
-            && msgReaction.message.id !== this._currentActiveQuestionMsgID
-            && msgReaction.message.author === msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
-                msgReaction.message.channel.send("You can't answer your own message question dickhead");
+                this.updateUsersPoints(msgReaction.message.author.id, msgReaction);
+            } else if(userIsAttemptingToAnswerOwnQuestion) {
+                msgReaction.message.channel.send("You can't answer your own question... -10 points for trying");
                 msgReaction.remove();
             }
-
         }
 
     }
 
+    private async updateUsersPoints(correctAnswerUsersID: string, msgReaction: MessageReaction): Promise<void> {
+        await DBService.connect(process.env.MONGO_DB_NAME, "roles").then((collection: Collection) => {
+            // check if answerer has answered a question before
+            collection.find({ userID: correctAnswerUsersID }).toArray((err, docs) => {
+                const user: { _id: string, userID: string, rolePoints: number } = docs[0];
+                // if they have, update their rolePoints by 5
+                if (docs.length > 0) {
+                    collection.updateOne({ userID: correctAnswerUsersID },
+                        {
+                            $set: { rolePoints: user.rolePoints + 5}
+                        }
+                    );
+                msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: "
+                + msgReaction.message.author.toString() + " now has " + (user.rolePoints + 5) + " points");
+                } else {
+                // if not just create a new entry
+                    collection.insertMany([
+                        {
+                            userID: correctAnswerUsersID,
+                            rolePoints: 5
+                        }
+                    ]);
+                }
+            });
+        });
+    }
 
 }
