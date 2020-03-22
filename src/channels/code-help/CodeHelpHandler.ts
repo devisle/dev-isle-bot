@@ -1,6 +1,7 @@
-import { Client, Message, PartialMessage, TextChannel, User, MessageReaction, ReactionEmoji, Emoji } from "discord.js";
+import { Client, Message, PartialMessage, TextChannel, User, MessageReaction } from "discord.js";
 import { createHourlyTextChannelMessageLoop, getChannelName } from "../../utils";
 import DBService from "../../services/DBService";
+import { Collection } from "mongodb";
 
 export default class CodeHelpHandler {
     /**
@@ -87,19 +88,13 @@ export default class CodeHelpHandler {
     // is active
     // eEDIT: convert the reactions to look for ID's instead of icons, just to future proof this
     // and refactor it, pretty ugly honestly
-    private watchForCodeHelpAnswerReaction(msgReaction: MessageReaction): void {
+    private async watchForCodeHelpAnswerReaction(msgReaction: MessageReaction): Promise<void> {
         // completely prevent the use of ☑️, it will be a bot only reaction
         if (msgReaction.emoji.name === "☑️" && !msgReaction.me) {
             msgReaction.remove();
         }
 
         if ((msgReaction.message.channel as TextChannel).name === "test") {
-
-            // mongo test
-            new DBService();
-            console.log("boop");
-
-
             // prevent calling an answer on the question itself by anyone
             if (msgReaction.message.id === this._currentActiveQuestionMsgID &&
                 msgReaction.emoji.name === "✅") {
@@ -119,8 +114,34 @@ export default class CodeHelpHandler {
                 console.log("Question answered");
                 this._currentActiveQuestionUserID = "";
                 this._activeQuestionAnswerUser = msgReaction.message.author;
-                msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: " + msgReaction.message.author.toString());
-
+                let correctUsersTotalPoints;
+                // create role document for new contributor
+                await DBService.connect(process.env.MONGO_DB_NAME, "roles").then((collection: Collection) => {
+                    // check if answerer has answered a question before
+                    collection.find({ userID: this._activeQuestionAnswerUser.id }).toArray((err, docs) => {
+                        const user: { _id: string, userID: string, rolePoints: number } = docs[0];
+                        // if they have, give them 5 points
+                        if (docs.length > 0) {
+                            collection.updateOne({ userID: this._activeQuestionAnswerUser.id },
+                                {
+                                    $set: { rolePoints: user.rolePoints + 5}
+                                }
+                            );
+                        correctUsersTotalPoints = user.rolePoints + 5;
+                        msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: "
+                        + msgReaction.message.author.toString() + " now has " + correctUsersTotalPoints + " points");
+                        } else {
+                        // else just create a new entry
+                            collection.insertMany([
+                                {
+                                    userID: this._activeQuestionAnswerUser.id,
+                                    rolePoints: 5
+                                }
+                            ]);
+                        }
+                    });
+                });
+            // deny own answer clause
             } else if(msgReaction.emoji.name === "✅"
             && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
             && msgReaction.message.id !== this._currentActiveQuestionMsgID
