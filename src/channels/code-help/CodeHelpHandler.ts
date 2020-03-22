@@ -2,6 +2,7 @@ import { Client, Message, PartialMessage, TextChannel, User, MessageReaction } f
 import { createHourlyTextChannelMessageLoop, getChannelName, checkMessageIsACommand } from "../../utils";
 import DBService from "../../services/DBService";
 import { Collection } from "mongodb";
+import RoleService from "../../services/RoleService";
 
 export default class CodeHelpHandler {
     /**
@@ -12,13 +13,12 @@ export default class CodeHelpHandler {
     /**
      * A tracker of the currently active question user's ID
      */
-
     private _currentActiveQuestionUserID: string;
+
     /**
      * A tracker of the current active question message ID
      */
     private _currentActiveQuestionMsgID: string;
-
 
     constructor(client: Client) {
         this._client = client;
@@ -123,7 +123,6 @@ export default class CodeHelpHandler {
 
         // ensure it is the correct channel
         if ((msgReaction.message.channel as TextChannel).name === "test") {
-
             if (tickUsageIsIllegal) {
                 msgReaction.remove();
             }
@@ -134,6 +133,7 @@ export default class CodeHelpHandler {
                 // reset the active question user for next question
                 this._currentActiveQuestionUserID = "";
                 this.updateUsersPoints(msgReaction.message.author.id, msgReaction);
+
             } else if(userIsAttemptingToAnswerOwnQuestion) {
                 msgReaction.message.channel.send("You can't answer your own question... -10 points for trying");
                 msgReaction.remove();
@@ -142,6 +142,10 @@ export default class CodeHelpHandler {
 
     }
 
+    /**
+     * PLEASE NOTE: We're also updating the users role inside of here,
+     * this obviously needs removing and doing better!!!
+     */
     private async updateUsersPoints(correctAnswerUsersID: string, msgReaction: MessageReaction): Promise<void> {
         await DBService.connect(process.env.MONGO_DB_NAME, "roles").then((collection: Collection) => {
             // check if answerer has answered a question before
@@ -156,6 +160,7 @@ export default class CodeHelpHandler {
                     );
                 msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: "
                 + msgReaction.message.author.toString() + " now has " + (user.rolePoints + 5) + " points");
+                RoleService.setCorrectContributorRole(user, msgReaction.message);
                 } else {
                 // if not just create a new entry
                     collection.insertMany([
@@ -164,6 +169,7 @@ export default class CodeHelpHandler {
                             rolePoints: 5
                         }
                     ]);
+
                 }
             });
         });

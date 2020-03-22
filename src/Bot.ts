@@ -9,7 +9,7 @@ class Bot {
     /**
      * The base Discord.js client
      */
-    private readonly _client = new Client();
+    private readonly _client: Client = new Client();
 
     constructor() {
         dotenv.config();
