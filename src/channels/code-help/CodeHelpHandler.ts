@@ -86,6 +86,7 @@ export default class CodeHelpHandler {
     // disallows any none question askers to use '✅' whilst a question
     // is active
     // eEDIT: convert the reactions to look for ID's instead of icons, just to future proof this
+    // and refactor it, pretty ugly honestly
     private watchForCodeHelpAnswerReaction(msgReaction: MessageReaction): void {
         // completely prevent the use of ☑️, it will be a bot only reaction
         if (msgReaction.emoji.name === "☑️" && !msgReaction.me) {
@@ -105,15 +106,20 @@ export default class CodeHelpHandler {
             // accept clause
             if (msgReaction.emoji.name === "✅"
                 && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
-                && msgReaction.message.id !== this._currentActiveQuestionMsgID) {
+                && msgReaction.message.id !== this._currentActiveQuestionMsgID
+                && msgReaction.message.author !== msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
                 msgReaction.remove();
                 msgReaction.message.react("☑️");
                 console.log("Question answered");
                 this._currentActiveQuestionUserID = "";
-                msgReaction.message.channel.send(
-                    "Answered accepted ☑️, 5 points given to: " +
-                    msgReaction.message.author.toString());
+                msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: " + msgReaction.message.author.toString());
 
+            } else if(msgReaction.emoji.name === "✅"
+            && msgReaction.users.cache.get(this._currentActiveQuestionUserID)
+            && msgReaction.message.id !== this._currentActiveQuestionMsgID
+            && msgReaction.message.author === msgReaction.users.cache.get(this._currentActiveQuestionUserID)) {
+                msgReaction.message.channel.send("You can't answer your own message question dickhead");
+                msgReaction.remove();
             }
 
         }
