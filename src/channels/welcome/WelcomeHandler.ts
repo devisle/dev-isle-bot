@@ -1,20 +1,20 @@
 import { Client, Message, PartialMessage, MessageReaction } from "discord.js";
+import IChannel from "../IChannel";
 
-export default class WelcomeHandler {
+export default class WelcomeHandler implements IChannel {
     /**
      * The original client obj
      */
-    private _client: Client;
+    public readonly CLIENT: Client;
 
     constructor(client: Client) {
-        this._client = client;
-        this.setupEvents();
+        this.CLIENT = client;
     }
 
     /**
      * Sets up all events included
      */
-    private setupEvents(): void {
+    public setupEvents(): void {
         this.setupMessageEvents();
         this.setupMessageReactionAddEvents();
     }
@@ -23,7 +23,7 @@ export default class WelcomeHandler {
      * Sets up the message events
      */
     private setupMessageEvents(): void {
-        this._client.on("message", ((msg: Message | PartialMessage) => {
+        this.CLIENT.on("message", ((msg: Message | PartialMessage) => {
 
         }));
     }
@@ -32,7 +32,7 @@ export default class WelcomeHandler {
      * Sets up the messageReactionAddEvents
      */
     private setupMessageReactionAddEvents(): void {
-        this._client.on("messageReactionAdd", (messageReaction: MessageReaction) => {
+        this.CLIENT.on("messageReactionAdd", (messageReaction: MessageReaction) => {
         });
     }
 

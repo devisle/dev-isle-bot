@@ -1,6 +1,7 @@
 import { Client, GuildMember, PartialGuildMember } from "discord.js";
 import dotenv from "dotenv";
 import CodeHelpHandler from "./channels/code-help/CodeHelpHandler";
+import WelcomeHandler from "./channels/welcome/WelcomeHandler";
 
 class Bot {
     /**
@@ -19,7 +20,8 @@ class Bot {
         /**
          * Setup channel handlers
          */
-        new CodeHelpHandler(this._client);
+        new CodeHelpHandler(this._client).setupEvents();
+        new WelcomeHandler(this._client).setupEvents();
         this._client.login(process.env.BOT_TOKEN);
     }
 

@@ -3,12 +3,13 @@ import { createHourlyTextChannelMessageLoop, getChannelName, checkMessageIsAComm
 import DBService from "../../services/DBService";
 import { Collection } from "mongodb";
 import RoleService from "../../services/RoleService";
+import IChannel from "../IChannel";
 
-export default class CodeHelpHandler {
+export default class CodeHelpHandler implements IChannel {
     /**
      * The original client obj
      */
-    private _client: Client;
+    public readonly CLIENT: Client;
 
     /**
      * A tracker of the currently active question user's ID
@@ -21,14 +22,13 @@ export default class CodeHelpHandler {
     private _currentActiveQuestionMsgID: string;
 
     constructor(client: Client) {
-        this._client = client;
-        this.setupEvents();
+        this.CLIENT = client;
     }
 
     /**
      * Sets up all events included
      */
-    private setupEvents(): void {
+    public setupEvents(): void {
         this.setupReadyEvents();
         this.setupMessageEvents();
         this.setupMessageReactionAddEvents();
@@ -38,9 +38,9 @@ export default class CodeHelpHandler {
      * Sets up the ready events
      */
     private setupReadyEvents(): void {
-        this._client.on("ready", () => {
-            console.log(`Logged in as: ${this._client.user?.tag}`);
-            createHourlyTextChannelMessageLoop(this._client, this._client.channels.cache.get("581854334401118292"),
+        this.CLIENT.on("ready", () => {
+            console.log(`Logged in as: ${this.CLIENT.user?.tag}`);
+            createHourlyTextChannelMessageLoop(this.CLIENT, this.CLIENT.channels.cache.get("581854334401118292"),
                 "Please follow our system when asking questions, use command '!question-help' for more info! (currently not online)");
         });
     }
@@ -49,7 +49,7 @@ export default class CodeHelpHandler {
      * Sets up the message events
      */
     private setupMessageEvents(): void {
-        this._client.on("message", ((msg: Message | PartialMessage) => {
+        this.CLIENT.on("message", ((msg: Message | PartialMessage) => {
             this.setActiveCodeHelpQuestion(msg);
             this.questionHelpCommand(msg);
         }));
@@ -92,7 +92,7 @@ export default class CodeHelpHandler {
      * Sets up the messageReactionAddEvents
      */
     private setupMessageReactionAddEvents(): void {
-        this._client.on("messageReactionAdd", (messageReaction: MessageReaction) => {
+        this.CLIENT.on("messageReactionAdd", (messageReaction: MessageReaction) => {
             this.watchForCodeHelpAnswerReaction(messageReaction);
         });
     }
