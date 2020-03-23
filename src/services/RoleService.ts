@@ -16,6 +16,7 @@ import { Message, PartialMessage } from "discord.js";
  * 691425440421642310
  */
 export default class RoleService {
+
     public static setCorrectContributorRole(
         dbUser: { _id: string, userID: string, rolePoints: number },
         message: Message | PartialMessage): void {
@@ -46,4 +47,6 @@ export default class RoleService {
 
         }
     }
+
+
 }
