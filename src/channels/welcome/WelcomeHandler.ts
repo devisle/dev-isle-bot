@@ -1,12 +1,16 @@
-import { Client, Message, PartialMessage, MessageReaction, TextChannel, Emoji } from "discord.js";
+import { Client, Message, PartialMessage, MessageReaction, TextChannel, Channel } from "discord.js";
 import IChannel from "../IChannel";
-import { checkMessageIsACommand } from "../../utils";
 
 export default class WelcomeHandler implements IChannel {
     /**
      * The original client obj
      */
     public readonly CLIENT: Client;
+
+    /**
+     * A reference to the #welcome channel
+     */
+    private _welcomeChannel: TextChannel;
 
     constructor(client: Client) {
         this.CLIENT = client;
@@ -18,6 +22,22 @@ export default class WelcomeHandler implements IChannel {
     public setupEvents(): void {
         this.setupMessageEvents();
         this.setupMessageReactionAddEvents();
+        this.setupReadyEvents();
+    }
+
+    private setupReadyEvents(): void {
+        this.CLIENT.on("ready", () => {
+            // welcome 584307025354424340
+            // test 691326089628221532
+            this._welcomeChannel = this.CLIENT.channels.resolve("691326089628221532") as TextChannel;
+
+            console.log(this._welcomeChannel.lastMessage);
+            console.log(this._welcomeChannel.lastMessageID);
+            this._welcomeChannel.messages.fetch(this._welcomeChannel.lastMessageID).then(msg => {
+                console.log(msg);
+            });
+
+        });
     }
 
     /**
@@ -77,7 +97,7 @@ Thanks, Nate.
      */
     private setupMessageReactionAddEvents(): void {
         this.CLIENT.on("messageReactionAdd", (messageReaction: MessageReaction) => {
-            console.log(messageReaction.emoji);
+            // console.log(messageReaction.emoji);
         });
     }
 
