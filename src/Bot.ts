@@ -1,7 +1,4 @@
-import { Client, Message, PartialMessage,
-         TextChannel,
-         User, MessageReaction, GuildMember,
-         PartialGuildMember } from "discord.js";
+import { Client, GuildMember, PartialGuildMember } from "discord.js";
 import dotenv from "dotenv";
 import CodeHelpHandler from "./channels/code-help/CodeHelpHandler";
 

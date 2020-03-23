@@ -14,6 +14,20 @@ import { Message, PartialMessage } from "discord.js";
  *
  * Expert Contributor
  * 691425440421642310
+ *
+ * ------------------------
+ *
+ * Front-End
+ * 606176637544824853
+ *
+ * Back-End
+ * 606176851706249217
+ *
+ * DevOps
+ * 606176895071027200
+ *
+ * UI/UX
+ * 606176959105597440
  */
 export default class RoleService {
 
