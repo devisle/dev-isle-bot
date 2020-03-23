@@ -29,10 +29,10 @@ export default class WelcomeHandler implements IChannel {
         this.CLIENT.on("ready", () => {
             // welcome 584307025354424340
             // test 691326089628221532
-            this._welcomeChannel = this.CLIENT.channels.resolve("691326089628221532") as TextChannel;
 
-            console.log(this._welcomeChannel.lastMessage);
-            console.log(this._welcomeChannel.lastMessageID);
+            // set channel reference
+            this._welcomeChannel = this.CLIENT.channels.resolve("691326089628221532") as TextChannel;
+            // grab last sent message (there will only be one obviously in the welcome channel)
             this._welcomeChannel.messages.fetch(this._welcomeChannel.lastMessageID).then(msg => {
                 console.log(msg);
             });
