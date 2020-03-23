@@ -38,8 +38,16 @@ export default class WelcomeHandler implements IChannel {
             const be = this.CLIENT.emojis.cache.get("691650381842743326").toString();
             const de = this.CLIENT.emojis.cache.get("691650936040325130").toString();
             const ui = this.CLIENT.emojis.cache.get("691650966503686165").toString();
-            message.channel.send(`**Please enter your area(s) of expertise**:
+            message.channel.send(`
+**Introduction**: ${"\r"}
+Dev Isle is a community which works on small open source projects. We have found that this experience is invaluable no matter
+how small your contributions are. In return for helping out, you will be able to have your name go on NPM and add this experience
+on LinkedIn. For people actively searching for developer roles, open source contributions are highly esteemed and will separate you
+out from the majority of newcomers and even some more experienced developers! So get involved, get started and feel free to ask for help.
 
+Thanks, Nate.
+
+**Please enter your area(s) of expertise**:
 ................................................
 
         ${fe} - Front-End
