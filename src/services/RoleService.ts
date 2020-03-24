@@ -38,33 +38,32 @@ export default class RoleService {
     public static setCorrectContributorRole(
         dbUser: { _id: string, userID: string, rolePoints: number },
         message: Message | PartialMessage): void {
+        const points = dbUser.rolePoints;
         switch (true) {
-            case (dbUser.rolePoints <= 5):
-                break;
-            case ((dbUser.rolePoints + 5) <= 10):
-                // beginner
+            case (points <= 10):
                 message.member.roles.add("691422001146888232");
                 break;
-            case ((dbUser.rolePoints + 5) <= 30):
-                // novice
+            case (points <= 30):
                 message.member.roles.remove("691422001146888232");
                 message.member.roles.add("691342664062337094");
                 break;
-            case (dbUser.rolePoints >= 60):
-                // competent
+            case (points <= 60):
                 message.member.roles.remove("691342664062337094");
                 message.member.roles.add("691421991256719482");
                 break;
-            case (dbUser.rolePoints >= 100):
-                // proficient
+            case (points <= 100):
                 message.member.roles.remove("691421991256719482");
                 message.member.roles.add("691425432368709682");
                 break;
-            case (dbUser.rolePoints >= 200):
-                // expert
+            case (points <= 150):
                 message.member.roles.remove("691425432368709682");
                 message.member.roles.add("691342664062337094");
                 break;
+            case (points <= 210):
+                message.member.roles.remove("691342664062337094");
+                message.member.roles.add("691425440421642310");
+                break;
+
         }
     }
 

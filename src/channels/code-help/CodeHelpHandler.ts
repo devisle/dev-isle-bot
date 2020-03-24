@@ -161,8 +161,9 @@ export default class CodeHelpHandler implements IChannel {
                             $set: { rolePoints: user.rolePoints + 5}
                         }
                     );
+                user.rolePoints + 5;
                 msgReaction.message.channel.send("Answer accepted ☑️, 5 points given to: "
-                + msgReaction.message.author.toString() + " now has " + (user.rolePoints + 5) + " points");
+                + msgReaction.message.author.toString() + " now has " + (user.rolePoints) + " points");
                 RoleService.setCorrectContributorRole(user, msgReaction.message);
                 } else {
                 // if not just create a new entry
