@@ -40,26 +40,27 @@ export default class RoleService {
         // 5
         switch (true) {
             case (points <= 10):
+                // beginner 5 - 10
                 message.member.roles.add("691422001146888232");
                 break;
             case (points <= 30):
                 message.member.roles.remove("691422001146888232");
+                // novice 15 - 30
                 message.member.roles.add("691342664062337094");
                 break;
             case (points <= 60):
                 message.member.roles.remove("691342664062337094");
+                // competent 35 - 60
                 message.member.roles.add("691421991256719482");
                 break;
-            case (points <= 100):
+            case (points <= 130):
                 message.member.roles.remove("691421991256719482");
+                // proficient 65 - 130
                 message.member.roles.add("691425432368709682");
                 break;
-            case (points <= 150):
+            case (points <= 250):
                 message.member.roles.remove("691425432368709682");
-                message.member.roles.add("691342664062337094");
-                break;
-            case (points <= 210):
-                message.member.roles.remove("691342664062337094");
+                // expert 135 - 250
                 message.member.roles.add("691425440421642310");
                 break;
 
