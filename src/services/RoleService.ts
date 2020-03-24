@@ -66,29 +66,40 @@ export default class RoleService {
         }
     }
 
-    public static setCorrectExpertiseRole(msgReaction: MessageReaction, user: User, client: Client): void {
-        const guildUser: GuildMember = client.guilds.cache.last(1)[0].member(msgReaction.users.cache.get(user.id));
+    public static setCorrectExpertiseRole(msgReaction: MessageReaction, user: User, client: Client, addOrRemove: string): void {
+        const guildUser: GuildMember = client.guilds.cache.last(1)[0].member(user.id);
 
         switch (msgReaction.emoji.id) {
             // fe
             case "691650017936670750":
-                guildUser.roles.add("606176637544824853");
+                addOrRemove === "add" ?
+                    guildUser.roles.add("606176637544824853")
+                :
+                    guildUser.roles.remove("606176637544824853");
                 break;
             // be
             case "691650381842743326":
-                guildUser.roles.add("606176851706249217");
+                addOrRemove === "add" ?
+                    guildUser.roles.add("606176851706249217")
+                :
+                    guildUser.roles.remove("606176851706249217");
                 break;
             // de
             case "691650936040325130":
-                guildUser.roles.add("606176895071027200");
+                addOrRemove === "add" ?
+                    guildUser.roles.add("606176895071027200")
+                :
+                    guildUser.roles.remove("606176895071027200");
                 break;
             // ui
             case "691650966503686165":
-                guildUser.roles.add("606176959105597440");
+                addOrRemove === "add" ?
+                    guildUser.roles.add("606176959105597440")
+                :
+                    guildUser.roles.remove("606176959105597440");
                 break;
 
         }
     }
-
 
 }

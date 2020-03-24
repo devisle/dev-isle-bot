@@ -30,6 +30,7 @@ export default class WelcomeHandler implements IChannel {
         this.setupReadyEvents();
         this.setupMessageEvents();
         this.setupMessageReactionAddEvents();
+        this.setupMessageReactionRemoveEvents();
     }
 
     private setupReadyEvents(): void {
@@ -39,11 +40,17 @@ export default class WelcomeHandler implements IChannel {
 
             // set channel reference
             this._welcomeChannel = this.CLIENT.channels.resolve("691326089628221532") as TextChannel;
-            // grab last sent message (there will only be one obviously in the welcome channel)
-            this._welcomeChannel.messages.fetch(this._welcomeChannel.lastMessageID).then(msg => {
-                console.log(msg);
-                this._lastMessageSent = msg;
-            });
+            this.updateLastMessageSent();
+        });
+    }
+
+    // updates the last message sent local store
+    // we need to update this because there's two stores for messages,
+    // the client's cache and discord db store. We're relying on the db store.
+    private updateLastMessageSent(): void {
+        // grab last sent message (there will only be one obviously in the welcome channel)
+        this._welcomeChannel.messages.fetch(this._welcomeChannel.lastMessageID).then(msg => {
+            this._lastMessageSent = msg;
         });
     }
 
@@ -52,7 +59,7 @@ export default class WelcomeHandler implements IChannel {
      */
     private setupMessageEvents(): void {
         this.CLIENT.on("message", ((msg: Message | PartialMessage) => {
-            this.createReactaroleMessage(msg);
+            msg.channel === this._welcomeChannel ? this.createReactaroleMessage(msg) : null;
         }));
     }
 
@@ -94,30 +101,58 @@ Thanks, Nate.
                 await msg.react("691650381842743326");
                 await msg.react("691650936040325130");
                 await msg.react("691650966503686165");
-            });
+            }).then(() => this.updateLastMessageSent());
         }
     }
 
     /**
-     * Sets up the messageReactionAddEvents
+     * Sets up the messageReactionAdd Events
      */
     private setupMessageReactionAddEvents(): void {
         this.CLIENT.on("messageReactionAdd", (msgReaction: MessageReaction, user: User) => {
-            this.attemptToSetUsersRole(msgReaction, user);
+            this.attemptToSetUsersRole(msgReaction, user, "add");
         });
     }
 
     // checks the last message exists, if it does, proceed to attempt to set their role
-    private attemptToSetUsersRole(msgReaction: MessageReaction, user: User): void {
+    private attemptToSetUsersRole(msgReaction: MessageReaction, user: User, addOrRemove: string): void {
         const channel = (msgReaction.message.channel) as TextChannel;
-        // console.log(messageReaction.emoji);
-        // ensure we've got the last message sent before allowing user to react
-        if (this._lastMessageSent === undefined && channel === this._welcomeChannel) {
+        // disable use of other reactions altogether
+        if (!this.isEmojiValid(msgReaction.emoji.id)) {
             msgReaction.remove();
-        } else {
-            msgReaction.message === this._lastMessageSent ? RoleService.setCorrectExpertiseRole(msgReaction, user, this.CLIENT)
-            : console.log("give no role");
         }
+        // ensure we've got the last message sent before allowing user to react
+        // make sure the msg being reacted to is the last msg sent
+        if (msgReaction.message === this._lastMessageSent && channel === this._welcomeChannel) {
+            if (addOrRemove === "add") {
+                RoleService.setCorrectExpertiseRole(msgReaction, user, this.CLIENT, "add");
+            } else {
+                RoleService.setCorrectExpertiseRole(msgReaction, user, this.CLIENT, "remove");
+                // roleService.removeCorrectExpertiseRole(msgReaction, user, this.CLIENT);
+            }
+        }
+    }
+
+    // checks for a valid emoji id
+    private isEmojiValid(emojiID: string): boolean {
+        switch (emojiID) {
+            case "691650017936670750":
+            case "691650381842743326":
+            case "691650936040325130":
+            case "691650966503686165":
+                return true;
+            default:
+                return false;
+        }
+    }
+
+    /**
+     * Sets up the messageReactionTemove Events
+     */
+    private setupMessageReactionRemoveEvents(): void {
+        this.CLIENT.on("messageReactionRemove", (msgReaction: MessageReaction, user: User) => {
+            this.attemptToSetUsersRole(msgReaction, user, "remove");
+        });
     }
 
 }
