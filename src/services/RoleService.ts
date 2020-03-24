@@ -39,30 +39,30 @@ export default class RoleService {
         dbUser: { _id: string, userID: string, rolePoints: number },
         message: Message | PartialMessage): void {
         switch (true) {
-            case (dbUser.rolePoints <= 10):
-                message.member.roles.add("691342664062337094");
-                break;
-            case (dbUser.rolePoints <= 30):
-                message.member.roles.remove("691342664062337094");
+            case (dbUser.rolePoints >= 10):
+                // beginner
                 message.member.roles.add("691422001146888232");
                 break;
-            case (dbUser.rolePoints <= 60):
+            case (dbUser.rolePoints >= 30):
+                // novice
                 message.member.roles.remove("691422001146888232");
+                message.member.roles.add("691342664062337094");
+                break;
+            case (dbUser.rolePoints >= 60):
+                // competent
+                message.member.roles.remove("691342664062337094");
                 message.member.roles.add("691421991256719482");
                 break;
-            case (dbUser.rolePoints <= 100):
+            case (dbUser.rolePoints >= 100):
+                // proficient
                 message.member.roles.remove("691421991256719482");
                 message.member.roles.add("691425432368709682");
                 break;
-            case (dbUser.rolePoints <= 150):
+            case (dbUser.rolePoints >= 200):
+                // expert
                 message.member.roles.remove("691425432368709682");
                 message.member.roles.add("691342664062337094");
                 break;
-            case (dbUser.rolePoints <= 210):
-                message.member.roles.remove("691342664062337094");
-                message.member.roles.add("691425440421642310");
-                break;
-
         }
     }
 
