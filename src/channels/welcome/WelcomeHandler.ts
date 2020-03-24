@@ -122,7 +122,7 @@ Thanks, Nate.
     private attemptToSetUsersRole(msgReaction: MessageReaction, user: User, addOrRemove: string): void {
         const channel = (msgReaction.message.channel) as TextChannel;
         // disable use of other reactions altogether
-        if (!this.isEmojiValid(msgReaction.emoji.id)) {
+        if (!this.isEmojiValid(msgReaction.emoji.id) && channel.id === "584307025354424340") {
             msgReaction.remove();
         }
         // ensure we've got the last message sent before allowing user to react
@@ -132,7 +132,6 @@ Thanks, Nate.
                 RoleService.setCorrectExpertiseRole(msgReaction, user, this.CLIENT, "add");
             } else {
                 RoleService.setCorrectExpertiseRole(msgReaction, user, this.CLIENT, "remove");
-                // roleService.removeCorrectExpertiseRole(msgReaction, user, this.CLIENT);
             }
         }
     }

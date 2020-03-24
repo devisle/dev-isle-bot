@@ -1,9 +1,13 @@
-import { Client, Message, PartialMessage, TextChannel, User, MessageReaction } from "discord.js";
-import { createHourlyTextChannelMessageLoop, getChannelName, checkMessageIsACommand } from "../../utils";
+import { Client, Message, PartialMessage, TextChannel, MessageReaction } from "discord.js";
+import { getChannelName, checkMessageIsACommand } from "../../utils";
 import DBService from "../../services/DBService";
 import { Collection } from "mongodb";
 import RoleService from "../../services/RoleService";
 import IChannel from "../IChannel";
+
+/**
+ * CODE-HELP: 581854334401118292
+ */
 
 export default class CodeHelpHandler implements IChannel {
     /**
@@ -40,8 +44,8 @@ export default class CodeHelpHandler implements IChannel {
     private setupReadyEvents(): void {
         this.CLIENT.on("ready", () => {
             console.log(`Logged in as: ${this.CLIENT.user?.tag}`);
-            createHourlyTextChannelMessageLoop(this.CLIENT, this.CLIENT.channels.cache.get("581854334401118292"),
-                "Please follow our system when asking questions, use command '!question-help' for more info! (currently not online)");
+            // createHourlyTextChannelMessageLoop(this.CLIENT, this.CLIENT.channels.cache.get("581854334401118292"),
+            //    "Please follow our system when asking questions, use command '!question-help' for more info!");
         });
     }
 
@@ -68,13 +72,13 @@ export default class CodeHelpHandler implements IChannel {
     // check if the message is prefixed with [QUESTION] and it is in "code-help"
     private checkMessageIsACodeHelpQuestion(msg: Message | PartialMessage): boolean {
         const prefix = msg.content.substring(0, 4);
-        if (prefix === "[Q] " && getChannelName(msg) === "test") {
+        if (prefix === "[Q] " && msg.channel.id === "581854334401118292") {
             return true;
         }
     }
 
     private questionHelpCommand(message: Message | PartialMessage): void {
-        if (checkMessageIsACommand(message)) {
+        if (checkMessageIsACommand(message) && message.channel.id === "581854334401118292") {
             if (message.content.substring(1, 14) === "question-help") {
                 message.author.send(
                     "In order to ask questions in **#code-help**, you must begin your message with **[Q]**."
@@ -122,7 +126,7 @@ export default class CodeHelpHandler implements IChannel {
         && msgReaction.message.author === msgReaction.users.cache.get(this._currentActiveQuestionUserID));
 
         // ensure it is the correct channel
-        if ((msgReaction.message.channel as TextChannel).name === "test") {
+        if (msgReaction.message.channel.id === "581854334401118292") {
             if (tickUsageIsIllegal) {
                 msgReaction.remove();
             }
@@ -133,9 +137,8 @@ export default class CodeHelpHandler implements IChannel {
                 // reset the active question user for next question
                 this._currentActiveQuestionUserID = "";
                 this.updateUsersPoints(msgReaction.message.author.id, msgReaction);
-
             } else if(userIsAttemptingToAnswerOwnQuestion) {
-                msgReaction.message.channel.send("You can't answer your own question... -10 points for trying");
+                msgReaction.message.channel.send("You can't answer your own question...");
                 msgReaction.remove();
             }
         }
@@ -158,7 +161,7 @@ export default class CodeHelpHandler implements IChannel {
                             $set: { rolePoints: user.rolePoints + 5}
                         }
                     );
-                msgReaction.message.channel.send("Answered accepted ☑️, 5 points given to: "
+                msgReaction.message.channel.send("Answer accepted ☑️, 5 points given to: "
                 + msgReaction.message.author.toString() + " now has " + (user.rolePoints + 5) + " points");
                 RoleService.setCorrectContributorRole(user, msgReaction.message);
                 } else {

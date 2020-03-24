@@ -24,7 +24,6 @@ class Bot {
         new WelcomeHandler(this._client).setupEvents();
         this._client.login(process.env.BOT_TOKEN);
     }
-
 }
 
 new Bot();
