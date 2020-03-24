@@ -39,11 +39,13 @@ export default class RoleService {
         dbUser: { _id: string, userID: string, rolePoints: number },
         message: Message | PartialMessage): void {
         switch (true) {
-            case (dbUser.rolePoints >= 5 && dbUser.rolePoints <= 30):
+            case (dbUser.rolePoints <= 5):
+                break;
+            case ((dbUser.rolePoints + 5) <= 10):
                 // beginner
                 message.member.roles.add("691422001146888232");
                 break;
-            case (dbUser.rolePoints >= 30 && dbUser.rolePoints <= 60):
+            case ((dbUser.rolePoints + 5) <= 30):
                 // novice
                 message.member.roles.remove("691422001146888232");
                 message.member.roles.add("691342664062337094");
