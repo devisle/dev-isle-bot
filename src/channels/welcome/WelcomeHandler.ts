@@ -34,23 +34,27 @@ export default class WelcomeHandler implements IChannel {
     }
 
     private setupReadyEvents(): void {
-        this.CLIENT.on("ready", () => {
+        this.CLIENT.on("ready", async () => {
             // welcome 584307025354424340
             // test 691326089628221532
 
             // set channel reference
-            this._welcomeChannel = this.CLIENT.channels.resolve("691326089628221532") as TextChannel;
-            this.updateLastMessageSent();
+            this._welcomeChannel = await this.CLIENT.channels.resolve("584307025354424340") as TextChannel;
+            await this.updateLastMessageSent();
+
         });
     }
 
     // updates the last message sent local store
     // we need to update this because there's two stores for messages,
     // the client's cache and discord db store. We're relying on the db store.
-    private updateLastMessageSent(): void {
+    private async updateLastMessageSent(): Promise<void> {
         // grab last sent message (there will only be one obviously in the welcome channel)
         this._welcomeChannel.messages.fetch(this._welcomeChannel.lastMessageID).then(msg => {
             this._lastMessageSent = msg;
+        }).catch(err => {
+            console.log("Failed to get lastMessageSent in #welcome");
+            console.log(err);
         });
     }
 
@@ -67,7 +71,7 @@ export default class WelcomeHandler implements IChannel {
     // effort having to track the message ID's in the db lol or the app itself as say a config var
     // tTODO: create a full command line based solution
     private createReactaroleMessage(message: Message | PartialMessage) {
-        if ((message.channel as TextChannel).name === "test" && message.content.substring(0, 11) === "!createrar") {
+        if (message.channel.id === "584307025354424340" && message.content.substring(0, 11) === "!createrar") {
             const fe = this.CLIENT.emojis.cache.get("691650017936670750").toString();
             const be = this.CLIENT.emojis.cache.get("691650381842743326").toString();
             const de = this.CLIENT.emojis.cache.get("691650936040325130").toString();
