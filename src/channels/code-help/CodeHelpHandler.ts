@@ -154,6 +154,7 @@ export default class CodeHelpHandler implements IChannel {
             // check if answerer has answered a question before
             collection.find({ userID: correctAnswerUsersID }).toArray((err, docs) => {
                 const user: { _id: string, userID: string, rolePoints: number } = docs[0];
+                const currentPoints = (user.rolePoints) + 5;
                 // if they have, update their rolePoints by 5
                 if (docs.length > 0) {
                     collection.updateOne({ userID: correctAnswerUsersID },
@@ -161,10 +162,9 @@ export default class CodeHelpHandler implements IChannel {
                             $set: { rolePoints: user.rolePoints + 5}
                         }
                     );
-                user.rolePoints + 5;
                 msgReaction.message.channel.send("Answer accepted ☑️, 5 points given to: "
-                + msgReaction.message.author.toString() + " now has " + (user.rolePoints) + " points");
-                RoleService.setCorrectContributorRole(user, msgReaction.message);
+                + msgReaction.message.author.toString() + " now has " + (currentPoints) + " points");
+                RoleService.setCorrectContributorRole(currentPoints, msgReaction.message);
                 } else {
                 // if not just create a new entry
                     collection.insertMany([

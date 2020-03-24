@@ -35,10 +35,9 @@ import { Client, Message, PartialMessage, MessageReaction, User, GuildMember } f
  */
 export default class RoleService {
 
-    public static setCorrectContributorRole(
-        dbUser: { _id: string, userID: string, rolePoints: number },
-        message: Message | PartialMessage): void {
-        const points = dbUser.rolePoints;
+    public static setCorrectContributorRole(currentPoints: number, message: Message | PartialMessage): void {
+        const points = currentPoints;
+        // 5
         switch (true) {
             case (points <= 10):
                 message.member.roles.add("691422001146888232");
