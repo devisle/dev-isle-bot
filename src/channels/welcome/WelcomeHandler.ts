@@ -1,5 +1,6 @@
-import { Client, Message, PartialMessage, MessageReaction, TextChannel, Channel } from "discord.js";
+import { Client, Message, PartialMessage, MessageReaction, TextChannel, Channel, User } from "discord.js";
 import IChannel from "../IChannel";
+import RoleService from "../../services/RoleService";
 
 export default class WelcomeHandler implements IChannel {
     /**
@@ -12,6 +13,12 @@ export default class WelcomeHandler implements IChannel {
      */
     private _welcomeChannel: TextChannel;
 
+    /**
+     * Last message sent in _welcomeChannel
+     * // may possible replace this with a hardcoded message ID
+     */
+    private _lastMessageSent: Message;
+
     constructor(client: Client) {
         this.CLIENT = client;
     }
@@ -20,9 +27,9 @@ export default class WelcomeHandler implements IChannel {
      * Sets up all events included
      */
     public setupEvents(): void {
+        this.setupReadyEvents();
         this.setupMessageEvents();
         this.setupMessageReactionAddEvents();
-        this.setupReadyEvents();
     }
 
     private setupReadyEvents(): void {
@@ -35,8 +42,8 @@ export default class WelcomeHandler implements IChannel {
             // grab last sent message (there will only be one obviously in the welcome channel)
             this._welcomeChannel.messages.fetch(this._welcomeChannel.lastMessageID).then(msg => {
                 console.log(msg);
+                this._lastMessageSent = msg;
             });
-
         });
     }
 
@@ -65,9 +72,11 @@ how small your contributions are. In return for helping out, you will be able to
 on LinkedIn. For people actively searching for developer roles, open source contributions are highly esteemed and will separate you
 out from the majority of newcomers and even some more experienced developers! So get involved, get started and feel free to ask for help.
 
+The GitGub org URL: https://github.com/devisle
+
 Thanks, Nate.
 
-**Please enter your area(s) of expertise**:
+**Please enter your area(s) of expertise to continue**:
 ................................................
 
         ${fe} - Front-End
@@ -86,20 +95,29 @@ Thanks, Nate.
                 await msg.react("691650936040325130");
                 await msg.react("691650966503686165");
             });
-
         }
-
-
     }
 
     /**
      * Sets up the messageReactionAddEvents
      */
     private setupMessageReactionAddEvents(): void {
-        this.CLIENT.on("messageReactionAdd", (messageReaction: MessageReaction) => {
-            // console.log(messageReaction.emoji);
+        this.CLIENT.on("messageReactionAdd", (msgReaction: MessageReaction, user: User) => {
+            this.attemptToSetUsersRole(msgReaction, user);
         });
     }
 
+    // checks the last message exists, if it does, proceed to attempt to set their role
+    private attemptToSetUsersRole(msgReaction: MessageReaction, user: User): void {
+        const channel = (msgReaction.message.channel) as TextChannel;
+        // console.log(messageReaction.emoji);
+        // ensure we've got the last message sent before allowing user to react
+        if (this._lastMessageSent === undefined && channel === this._welcomeChannel) {
+            msgReaction.remove();
+        } else {
+            msgReaction.message === this._lastMessageSent ? RoleService.setCorrectExpertiseRole(msgReaction, user, this.CLIENT)
+            : console.log("give no role");
+        }
+    }
 
 }

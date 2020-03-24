@@ -1,4 +1,4 @@
-import { Message, PartialMessage } from "discord.js";
+import { Client, Message, PartialMessage, MessageReaction, User, GuildMember } from "discord.js";
 /**
  * Novice Contributor
  * 691342664062337094
@@ -61,6 +61,30 @@ export default class RoleService {
             case (dbUser.rolePoints <= 210):
                 message.member.roles.remove("691342664062337094");
                 message.member.roles.add("691425440421642310");
+                break;
+
+        }
+    }
+
+    public static setCorrectExpertiseRole(msgReaction: MessageReaction, user: User, client: Client): void {
+        const guildUser: GuildMember = client.guilds.cache.last(1)[0].member(msgReaction.users.cache.get(user.id));
+
+        switch (msgReaction.emoji.id) {
+            // fe
+            case "691650017936670750":
+                guildUser.roles.add("606176637544824853");
+                break;
+            // be
+            case "691650381842743326":
+                guildUser.roles.add("606176851706249217");
+                break;
+            // de
+            case "691650936040325130":
+                guildUser.roles.add("606176895071027200");
+                break;
+            // ui
+            case "691650966503686165":
+                guildUser.roles.add("606176959105597440");
                 break;
 
         }
