@@ -43,7 +43,7 @@ export default class RoleService {
                 // beginner
                 message.member.roles.add("691422001146888232");
                 break;
-            case (dbUser.rolePoints >= 30):
+            case (dbUser.rolePoints >= 30 && dbUser.rolePoints <= 60):
                 // novice
                 message.member.roles.remove("691422001146888232");
                 message.member.roles.add("691342664062337094");
