@@ -153,10 +153,11 @@ export default class CodeHelpHandler implements IChannel {
         await DBService.connect(process.env.MONGO_DB_NAME, "roles").then((collection: Collection) => {
             // check if answerer has answered a question before
             collection.find({ userID: correctAnswerUsersID }).toArray((err, docs) => {
-                const user: { _id: string, userID: string, rolePoints: number } = docs[0];
-                const currentPoints = (user.rolePoints) + 5;
                 // if they have, update their rolePoints by 5
                 if (docs.length > 0) {
+                    const user: { _id: string, userID: string, rolePoints: number } = docs[0];
+                    const currentPoints = (user?.rolePoints) + 5;
+                    console.log(docs);
                     collection.updateOne({ userID: correctAnswerUsersID },
                         {
                             $set: { rolePoints: user.rolePoints + 5}
@@ -165,7 +166,8 @@ export default class CodeHelpHandler implements IChannel {
                 msgReaction.message.channel.send("Answer accepted ☑️, 5 points given to: "
                 + msgReaction.message.author.toString() + " now has " + (currentPoints) + " points");
                 RoleService.setCorrectContributorRole(currentPoints, msgReaction.message);
-                } else {
+                } else if(docs.length === 0) {
+                    console.log("creating new role entry for user");
                 // if not just create a new entry
                     collection.insertMany([
                         {
@@ -173,7 +175,7 @@ export default class CodeHelpHandler implements IChannel {
                             rolePoints: 5
                         }
                     ]);
-
+                    msgReaction.message.channel.send("Answer accepted ☑️, 5 points given to: " + msgReaction.message.author.toString() + " now has 5 points");
                 }
             });
         });
