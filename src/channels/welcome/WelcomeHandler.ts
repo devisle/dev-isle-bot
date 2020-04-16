@@ -1,4 +1,4 @@
-import { Client, Message, PartialMessage, MessageReaction, TextChannel, Channel, User } from "discord.js";
+import { Client, Message, PartialMessage, MessageReaction, TextChannel, Channel, User, PartialUser } from "discord.js";
 import IChannel from "../IChannel";
 import RoleService from "../../services/RoleService";
 
@@ -113,8 +113,8 @@ Thanks, Nate.
      * Sets up the messageReactionAdd Events
      */
     private setupMessageReactionAddEvents(): void {
-        this.CLIENT.on("messageReactionAdd", (msgReaction: MessageReaction, user: User) => {
-            this.attemptToSetUsersRole(msgReaction, user, "add");
+        this.CLIENT.on("messageReactionAdd", (msgReaction: MessageReaction, user: User | PartialUser) => {
+            this.attemptToSetUsersRole(msgReaction, user as User, "add");
         });
     }
 
@@ -153,8 +153,8 @@ Thanks, Nate.
      * Sets up the messageReactionTemove Events
      */
     private setupMessageReactionRemoveEvents(): void {
-        this.CLIENT.on("messageReactionRemove", (msgReaction: MessageReaction, user: User) => {
-            this.attemptToSetUsersRole(msgReaction, user, "remove");
+        this.CLIENT.on("messageReactionRemove", (msgReaction: MessageReaction, user: User | PartialUser) => {
+            this.attemptToSetUsersRole(msgReaction, user as User, "remove");
         });
     }
 
